@@ -81,15 +81,34 @@ a vertex-coloured PLY, an XYZ point cloud, LDraw `.ldr` / packed `.mpd` and a G-
 The app can be packaged as a native Windows program with [Tauri](https://tauri.app). It uses the
 WebView2 runtime built into Windows 10/11, so the app is only a few MB.
 
-**Easiest: let GitHub build it.** Every push to `main` or a pull request runs the
-[Windows build](.github/workflows/windows-build.yml) workflow. Open the repo's **Actions** tab,
-pick the latest *Windows build* run and download the **local-3d-viewer-windows** artifact. It
-contains:
-- `local-3d-viewer.exe`: the portable app, which runs without installing
-- `Local 3D Viewer_x.y.z_x64-setup.exe`: an installer with a Start-menu shortcut and uninstaller
-- `Local 3D Viewer_x.y.z_x64_en-US.msi`: an MSI installer
+**Download (for everyone):** go to the
+[**Releases** page](https://github.com/muhammadli3d/3d-quick-viewer/releases/latest) and download
+`Local-3D-Viewer_x.y.z_x64-setup.exe`. No GitHub account is needed. Files available:
+- `…_x64-setup.exe`: recommended installer with a Start-menu shortcut and uninstaller
+- `…_x64.msi`: MSI installer
+- `…_x64-portable.exe`: runs without installing
+- `SHA256SUMS.txt`: checksums to verify the download (`Get-FileHash <file>` in PowerShell)
 
-You can also start it by hand with **Run workflow**.
+**Test builds:** every push to `main` or a pull request runs the
+[Windows build](.github/workflows/windows-build.yml) workflow. Open the **Actions** tab, pick a run
+and download the **local-3d-viewer-windows** artifact (GitHub login required, deleted after 90 days).
+
+## Publishing a release (maintainers)
+
+1. Bump the version in **all three** files (they must match): `package.json`,
+   `src-tauri/tauri.conf.json` and `src-tauri/Cargo.toml`. Commit and merge to `main`.
+2. Tag it and push the tag:
+   ```powershell
+   git checkout main; git pull
+   git tag v0.1.0
+   git push origin v0.1.0
+   ```
+3. The [Release](.github/workflows/release.yml) workflow builds the app (about 10 minutes) and
+   publishes the installers to the Releases page with auto-generated notes. Tags containing a dash
+   (`v0.2.0-beta.1`) are marked as pre-releases.
+
+If the tag doesn't match the versions, the workflow fails immediately with an error. Delete the
+tag (`git push origin :refs/tags/v0.1.0`), fix the versions and tag again.
 
 **Build locally** (on Windows) after installing
 [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)

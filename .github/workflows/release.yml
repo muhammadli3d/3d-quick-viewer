@@ -1,0 +1,94 @@
+# Publishes a GitHub Release with the Windows installers whenever a version
+# tag is pushed:
+#
+#   git tag v0.1.0
+#   git push origin v0.1.0
+#
+# The tag must match the app version (package.json, src-tauri/tauri.conf.json
+# and src-tauri/Cargo.toml). The job stops with a clear error if it doesn't.
+# Result: https://github.com/muhammadli3d/3d-quick-viewer/releases/latest
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write # needed to create the release and upload files
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check tag matches app version
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}".TrimStart('v')
+          $versions = @{
+            'package.json'              = (Get-Content package.json -Raw | ConvertFrom-Json).version
+            'src-tauri/tauri.conf.json' = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+            'src-tauri/Cargo.toml'      = ((Select-String -Path src-tauri/Cargo.toml -Pattern '^version\s*=\s*"(.+)"' | Select-Object -First 1).Matches.Groups[1].Value)
+          }
+          $bad = $false
+          foreach ($file in $versions.Keys) {
+            if ($versions[$file] -ne $tag) {
+              Write-Host "::error::$file has version $($versions[$file]) but the tag is v$tag"
+              $bad = $true
+            }
+          }
+          if ($bad) { exit 1 }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - run: npm ci
+
+      - run: npx tauri build
+
+      # Give the files clean names without spaces, then write SHA-256 checksums
+      # so people can verify their download.
+      - name: Collect release files
+        shell: pwsh
+        run: |
+          $v = "${{ github.ref_name }}".TrimStart('v')
+          $out = New-Item -ItemType Directory -Force release
+          $bundle = 'src-tauri/target/release/bundle'
+          Copy-Item (Get-ChildItem "$bundle/nsis/*-setup.exe" | Select-Object -First 1) "$out/Local-3D-Viewer_${v}_x64-setup.exe"
+          Copy-Item (Get-ChildItem "$bundle/msi/*.msi" | Select-Object -First 1) "$out/Local-3D-Viewer_${v}_x64.msi"
+          Copy-Item 'src-tauri/target/release/local-3d-viewer.exe' "$out/Local-3D-Viewer_${v}_x64-portable.exe"
+          Get-ChildItem $out -File | Get-FileHash -Algorithm SHA256 |
+            ForEach-Object { "$($_.Hash.ToLower())  $(Split-Path $_.Path -Leaf)" } |
+            Set-Content "$out/SHA256SUMS.txt"
+          Get-ChildItem $out | Format-Table Name, Length
+
+      - name: Create GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          # Tags like v0.2.0-beta.1 are marked as pre-releases.
+          $extra = @()
+          if ($tag -match '-') { $extra += '--prerelease' }
+          $notes = @"
+
+          ## Install
+          - **``Local-3D-Viewer_*_x64-setup.exe``**: recommended installer (Start-menu shortcut, uninstaller)
+          - **``Local-3D-Viewer_*_x64.msi``**: MSI installer
+          - **``Local-3D-Viewer_*_x64-portable.exe``**: runs without installing
+
+          Windows may show "Windows protected your PC" because the app is not code-signed:
+          click **More info -> Run anyway**. Checksums are in ``SHA256SUMS.txt``.
+          "@
+          gh release create $tag release/* --title "Local 3D Viewer $tag" --generate-notes --notes $notes @extra

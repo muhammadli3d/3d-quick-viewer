@@ -62,12 +62,19 @@ src/
   utils/units.js      unit conversion (via mm) and number/byte formatting
   utils/dispose.js    frees geometry/material/texture GPU memory
 src-tauri/            Tauri shell: tauri.conf.json, Cargo.toml (+ Cargo.lock), src/*.rs, icons/
-.github/workflows/windows-build.yml  builds the .exe/installers on GitHub Actions
+.github/workflows/windows-build.yml  test build on push/PR → Actions artifact (90 days, login needed)
+.github/workflows/release.yml        tag `v*` → GitHub Release with installers + SHA256SUMS.txt
 public/               static assets copied as-is
 samples/              small generated test models (committed)
 scripts/make-samples.mjs  sample generator (Node; polyfills FileReader for GLTFExporter)
 docs/screenshot.png   README screenshot
 ```
+
+## Releasing
+
+Bump the version in `package.json`, `src-tauri/tauri.conf.json` and `src-tauri/Cargo.toml`
+(all three must match), merge to `main`, then `git tag vX.Y.Z && git push origin vX.Y.Z`.
+`release.yml` verifies the tag matches, builds on windows-latest and publishes the Release.
 
 ## Adding a format
 
