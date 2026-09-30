@@ -1,0 +1,390 @@
+/* ------------------------------------------------------------------
+   Theme tokens. The viewer reads --viewport-bg to pick its default
+   background colour, so the 3D view follows the theme too.
+   ------------------------------------------------------------------ */
+:root,
+:root[data-theme='dark'] {
+  --bg: #16171a;
+  --viewport-bg: #1e1f22;
+  --panel: rgba(30, 31, 35, 0.92);
+  --panel-border: #33353b;
+  --text: #e6e7ea;
+  --text-dim: #9a9ca3;
+  --accent: #4da3ff;
+  --danger: #ff6b6b;
+  --warn: #f5b942;
+  --button: #2a2c31;
+  --button-hover: #363940;
+  --shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+
+:root[data-theme='light'] {
+  --bg: #f3f4f6;
+  --viewport-bg: #e9eaec;
+  --panel: rgba(255, 255, 255, 0.94);
+  --panel-border: #d5d7dc;
+  --text: #1d1f23;
+  --text-dim: #5d6068;
+  --accent: #0a6fdb;
+  --danger: #d03030;
+  --warn: #b27800;
+  --button: #eceef1;
+  --button-hover: #dfe2e6;
+  --shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font: 13px/1.4 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+button {
+  font: inherit;
+  color: var(--text);
+  background: var(--button);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+button:hover {
+  background: var(--button-hover);
+}
+
+#viewport {
+  position: fixed;
+  inset: 0;
+}
+#viewport canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  outline: none;
+}
+
+/* ---------------- Toolbar ---------------- */
+#toolbar {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  right: 260px; /* leave room for lil-gui on the right */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none; /* only the buttons catch clicks, so orbiting still works */
+}
+#toolbar > * {
+  pointer-events: auto;
+}
+#toolbar .brand {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 5px 10px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+}
+#toolbar .spacer {
+  flex: 1;
+  pointer-events: none;
+}
+.file-label {
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 40vw;
+}
+
+/* ---------------- Side panel ---------------- */
+#side-panel {
+  position: fixed;
+  top: 52px;
+  left: 10px;
+  bottom: 10px;
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+#side-panel[hidden] {
+  display: none;
+}
+#side-panel section {
+  pointer-events: auto;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  box-shadow: var(--shadow);
+}
+#side-panel h3 {
+  margin: 0 0 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+#outliner-section {
+  flex: 1;
+  min-height: 80px;
+  overflow: auto;
+}
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.info-table td {
+  padding: 1px 0;
+  vertical-align: top;
+}
+.info-table td:first-child {
+  color: var(--text-dim);
+  width: 42%;
+}
+.info-table td:last-child {
+  font-variant-numeric: tabular-nums;
+  word-break: break-all;
+}
+.dims {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1px 10px;
+  margin-top: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.dims .axis-x { color: #e5534b; font-weight: 600; }
+.dims .axis-y { color: #57ab5a; font-weight: 600; }
+.dims .axis-z { color: #539bf5; font-weight: 600; }
+
+/* ---------------- Outliner ---------------- */
+.tree {
+  list-style: none;
+  margin: 0;
+  padding-left: 12px;
+}
+#outliner > .tree {
+  padding-left: 0;
+}
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tree-row:hover {
+  background: var(--button-hover);
+}
+.tree-row.selected {
+  background: var(--accent);
+  color: #fff;
+}
+.tree-toggle {
+  width: 12px;
+  text-align: center;
+  color: var(--text-dim);
+  flex: none;
+}
+.tree-row.selected .tree-toggle {
+  color: #fff;
+}
+.tree-type {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+.tree-row.selected .tree-type {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* ---------------- Empty state ---------------- */
+#empty-state {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+#empty-state[hidden] {
+  display: none;
+}
+.empty-card {
+  text-align: center;
+  padding: 36px 48px;
+  border: 2px dashed var(--panel-border);
+  border-radius: 16px;
+  color: var(--text-dim);
+  transition: border-color 0.15s, color 0.15s;
+}
+#empty-state:hover .empty-card {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.empty-title {
+  font-size: 18px;
+  margin: 12px 0 4px;
+  color: var(--text);
+}
+.empty-sub {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* ---------------- Drop + loading overlays ---------------- */
+#drop-overlay {
+  position: fixed;
+  inset: 8px;
+  border: 3px dashed var(--accent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  pointer-events: none;
+  z-index: 20;
+}
+#drop-overlay[hidden] {
+  display: none;
+}
+
+#loading-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.25);
+  z-index: 30;
+}
+#loading-overlay[hidden] {
+  display: none;
+}
+.loading-card {
+  min-width: 280px;
+  max-width: 420px;
+  padding: 18px 22px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.loading-name {
+  font-weight: 600;
+  margin-top: 10px;
+  word-break: break-all;
+}
+.loading-stage {
+  color: var(--text-dim);
+  margin: 2px 0 10px;
+}
+.progress {
+  height: 4px;
+  background: var(--button);
+  border-radius: 2px;
+  overflow: hidden;
+}
+#loading-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  transition: width 0.1s;
+}
+#loading-bar.indeterminate {
+  width: 30%;
+  animation: slide 1s ease-in-out infinite;
+}
+@keyframes slide {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(340%); }
+}
+.spinner {
+  width: 26px;
+  height: 26px;
+  margin: 0 auto;
+  border: 3px solid var(--button-hover);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---------------- Toasts ---------------- */
+#toasts {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 40;
+  width: min(560px, calc(100vw - 32px));
+}
+.toast {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+.toast.error { border-left-color: var(--danger); }
+.toast.warn { border-left-color: var(--warn); }
+.toast .toast-body { flex: 1; white-space: pre-line; }
+.toast .toast-title { font-weight: 600; }
+.toast button {
+  padding: 0 6px;
+  border: none;
+  background: none;
+  color: var(--text-dim);
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* ---------------- lil-gui ---------------- */
+.lil-gui.root {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  max-height: calc(100vh - 160px); /* keep clear of the axes gizmo in the bottom-right */
+  overflow-y: auto;
+  --width: 240px;
+}
+:root[data-theme='light'] .lil-gui {
+  --background-color: #f6f7f9;
+  --text-color: #1d1f23;
+  --title-background-color: #e3e5e9;
+  --title-text-color: #1d1f23;
+  --widget-color: #dcdfe4;
+  --hover-color: #cfd3d9;
+  --focus-color: #c3c8cf;
+  --number-color: #0a6fdb;
+  --string-color: #2f7d32;
+}
+
+/* Small screens: stack things a bit tighter */
+@media (max-width: 720px) {
+  #toolbar { right: 10px; flex-wrap: wrap; }
+  #side-panel { width: 220px; }
+  .lil-gui.root { top: auto; bottom: 10px; max-height: 45vh; }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "local-3d-viewer",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Offline-first local 3D model viewer (three.js + Vite)",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "samples": "node scripts/make-samples.mjs"
+  },
+  "dependencies": {
+    "lil-gui": "^0.21.0",
+    "occt-import-js": "^0.0.23",
+    "rhino3dm": "^8.35.0",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "vite": "^8.3.1"
+  }
+}
