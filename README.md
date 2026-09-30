@@ -84,7 +84,7 @@ large and has its own licence, so it is **not** included in this repo.
 1. Get the library, either from [library.ldraw.org](https://library.ldraw.org/updates?latest)
    (`complete.zip`, unzip it anywhere) or from the copy BrickLink Studio installs
    (e.g. `C:\Program Files\Studio 2.0\ldraw`).
-2. Copy `.env.example` to `.env` and point it at the folder that contains `LDConfig.ldr`:
+2. Create a file named `.env` in the project root (it is git-ignored) that points at the folder containing `LDConfig.ldr`:
    ```ini
    LDRAW_LIBRARY_PATH=C:/LDraw/ldraw
    ```

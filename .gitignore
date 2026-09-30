@@ -7,7 +7,6 @@ dist-ssr/
 # Environment (holds local paths like LDRAW_LIBRARY_PATH)
 .env
 .env.*
-!.env.example
 
 # LDraw parts library: never commit it (it is large and has its own licence)
 ldraw/
