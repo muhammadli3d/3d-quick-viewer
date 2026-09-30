@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Local 3D Viewer</title>
+  </head>
+  <body>
+    <div id="viewport"></div>
+
+    <!-- Top toolbar -->
+    <header id="toolbar">
+      <div class="brand">3D Viewer</div>
+      <button id="btn-open" title="Open file(s) (O)">Open</button>
+      <button id="btn-frame" title="Frame model (F)">Frame</button>
+      <span id="file-label" class="file-label"></span>
+      <div class="spacer"></div>
+      <button id="btn-theme" title="Toggle light/dark theme (L)">Theme</button>
+      <input id="file-input" type="file" multiple hidden />
+    </header>
+
+    <!-- Left side panel: info, dimensions, outliner -->
+    <aside id="side-panel" hidden>
+      <section id="info-section"></section>
+      <section id="outliner-section">
+        <h3>Outliner</h3>
+        <div id="outliner"></div>
+      </section>
+    </aside>
+
+    <!-- Empty state -->
+    <div id="empty-state">
+      <div class="empty-card">
+        <svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true">
+          <path d="M32 6 56 19v26L32 58 8 45V19Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+          <path d="M8 19 32 32l24-13M32 32v26" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+        </svg>
+        <p class="empty-title">Drop a 3D file here or click to open</p>
+        <p class="empty-sub">STL · 3MF · OBJ · glTF/GLB · FBX · PLY · STEP · 3DM · LDraw · G-code and more</p>
+      </div>
+    </div>
+
+    <!-- Drag highlight -->
+    <div id="drop-overlay" hidden><div>Drop to open</div></div>
+
+    <!-- Loading overlay -->
+    <div id="loading-overlay" hidden>
+      <div class="loading-card">
+        <div class="spinner"></div>
+        <div id="loading-name" class="loading-name"></div>
+        <div id="loading-stage" class="loading-stage"></div>
+        <div class="progress"><div id="loading-bar"></div></div>
+      </div>
+    </div>
+
+    <!-- Messages (errors / notices) -->
+    <div id="toasts"></div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

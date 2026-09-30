@@ -1,0 +1,14 @@
+newmtl robot_body
+Kd 0.85 0.35 0.10
+Ks 0.3 0.3 0.3
+Ns 40
+
+newmtl robot_head
+Kd 0.90 0.90 0.92
+Ks 0.5 0.5 0.5
+Ns 80
+
+newmtl robot_limb
+Kd 0.25 0.28 0.32
+Ks 0.2 0.2 0.2
+Ns 20
