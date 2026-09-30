@@ -1,0 +1,54 @@
+# Builds the Windows desktop app (Tauri) on a GitHub-hosted Windows machine,
+# so you don't need Rust or Visual Studio installed locally.
+#
+# Download the result: repo → Actions → "Windows build" → pick a run →
+# "Artifacts" at the bottom → local-3d-viewer-windows (a zip containing the
+# .exe, the NSIS setup .exe and the .msi).
+name: Windows build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: # "Run workflow" button in the Actions tab
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      # Caches compiled Rust crates: the first build takes ~10 min, later ones ~2–3 min.
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - run: npm ci
+
+      # Runs `npm run build` (Vite) first, then compiles the Rust shell and
+      # bundles the NSIS + MSI installers (see src-tauri/tauri.conf.json).
+      - run: npx tauri build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: local-3d-viewer-windows
+          if-no-files-found: error
+          path: |
+            src-tauri/target/release/local-3d-viewer.exe
+            src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/bundle/msi/*.msi
