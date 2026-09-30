@@ -11,12 +11,52 @@ import * as THREE from 'three';
  * Every loader is behind a dynamic import(), so Vite puts it in its own
  * chunk and the initial page only downloads three.js core + the UI.
  */
-export const FORMATS = {
-  stl: { label: 'STL', upAxis: 'z', units: 'mm', load: () => import('./printing.js').then((m) => m.loadSTL) },
+const printing = () => import('./printing.js');
+const interchange = () => import('./interchange.js');
+const gltf = () => import('./gltf.js');
+const pointcloud = () => import('./pointcloud.js');
+const cad = () => import('./cad.js');
+const ldraw = () => import('./ldraw.js');
 
-  obj: { label: 'Wavefront OBJ', upAxis: 'y', units: 'm', load: () => import('./interchange.js').then((m) => m.loadOBJ) },
-  gltf: { label: 'glTF', upAxis: 'y', units: 'm', load: () => import('./gltf.js').then((m) => m.loadGLTF) },
-  glb: { label: 'glTF binary', upAxis: 'y', units: 'm', load: () => import('./gltf.js').then((m) => m.loadGLTF) },
+export const FORMATS = {
+  // 3D printing (Z-up, millimetres)
+  stl: { label: 'STL', upAxis: 'z', units: 'mm', load: () => printing().then((m) => m.loadSTL) },
+  '3mf': { label: '3MF', upAxis: 'z', units: 'mm', load: () => printing().then((m) => m.load3MF) },
+  // AMF is a print format like 3MF, so it gets the same Z-up default.
+  amf: { label: 'AMF', upAxis: 'z', units: 'mm', load: () => printing().then((m) => m.loadAMF) },
+  gcode: { label: 'G-code', upAxis: 'z', units: 'mm', load: () => printing().then((m) => m.loadGCode) },
+  gco: { label: 'G-code', upAxis: 'z', units: 'mm', load: () => printing().then((m) => m.loadGCode) },
+
+  // DCC / interchange
+  obj: { label: 'Wavefront OBJ', upAxis: 'y', units: 'm', load: () => interchange().then((m) => m.loadOBJ) },
+  gltf: { label: 'glTF', upAxis: 'y', units: 'm', load: () => gltf().then((m) => m.loadGLTF) },
+  glb: { label: 'glTF binary', upAxis: 'y', units: 'm', load: () => gltf().then((m) => m.loadGLTF) },
+  fbx: { label: 'FBX', upAxis: 'y', units: 'cm', load: () => interchange().then((m) => m.loadFBX) },
+  dae: { label: 'COLLADA', upAxis: 'y', units: 'm', load: () => interchange().then((m) => m.loadDAE) },
+  '3ds': { label: '3DS', upAxis: 'y', units: 'm', load: () => interchange().then((m) => m.load3DS) },
+  usdz: { label: 'USDZ', upAxis: 'y', units: 'm', load: () => interchange().then((m) => m.loadUSD) },
+  usda: { label: 'USD (ASCII)', upAxis: 'y', units: 'm', load: () => interchange().then((m) => m.loadUSD) },
+  usdc: { label: 'USD (crate)', upAxis: 'y', units: 'm', load: () => interchange().then((m) => m.loadUSD) },
+  usd: { label: 'USD', upAxis: 'y', units: 'm', load: () => interchange().then((m) => m.loadUSD) },
+
+  // Scans / point clouds / scientific
+  ply: { label: 'PLY', upAxis: 'y', units: 'm', load: () => pointcloud().then((m) => m.loadPLY) },
+  pcd: { label: 'PCD point cloud', upAxis: 'y', units: 'm', load: () => pointcloud().then((m) => m.loadPCD) },
+  xyz: { label: 'XYZ point cloud', upAxis: 'y', units: 'm', load: () => pointcloud().then((m) => m.loadXYZ) },
+  vtk: { label: 'VTK', upAxis: 'y', units: 'm', load: () => pointcloud().then((m) => m.loadVTK) },
+  vtp: { label: 'VTK PolyData', upAxis: 'y', units: 'm', load: () => pointcloud().then((m) => m.loadVTK) },
+
+  // CAD (occt converts STEP/IGES to mm). Rhino is always Z-up.
+  step: { label: 'STEP', upAxis: 'y', units: 'mm', load: () => cad().then((m) => m.loadCAD) },
+  stp: { label: 'STEP', upAxis: 'y', units: 'mm', load: () => cad().then((m) => m.loadCAD) },
+  iges: { label: 'IGES', upAxis: 'y', units: 'mm', load: () => cad().then((m) => m.loadCAD) },
+  igs: { label: 'IGES', upAxis: 'y', units: 'mm', load: () => cad().then((m) => m.loadCAD) },
+  '3dm': { label: 'Rhino 3DM', upAxis: 'z', units: 'mm', load: () => cad().then((m) => m.load3DM) },
+
+  // LEGO (the loader flips −Y-up to Y-up and scales LDU → mm)
+  ldr: { label: 'LDraw', upAxis: 'y', units: 'mm', quietMissing: true, load: () => ldraw().then((m) => m.loadLDraw) },
+  mpd: { label: 'LDraw MPD', upAxis: 'y', units: 'mm', quietMissing: true, load: () => ldraw().then((m) => m.loadLDraw) },
+  dat: { label: 'LDraw part', upAxis: 'y', units: 'mm', quietMissing: true, load: () => ldraw().then((m) => m.loadLDraw) },
 };
 
 /**
@@ -132,7 +172,9 @@ export function createFileSet(files, main) {
 export function createManager(fileSet, { onProgress, onMissing }) {
   const manager = new THREE.LoadingManager();
   manager.setURLModifier((url) => {
-    if (url.startsWith('data:') || url.startsWith('blob:')) return url;
+    if (url.startsWith('data:')) return url;
+    // Note: relative paths inside a file loaded from a blob: URL come out as
+    // "blob:http://host/texture.png", so blob: URLs must be looked up too.
     return fileSet.urls.get(basename(url)) ?? url;
   });
   manager.onProgress = (_url, loaded, total) => onProgress?.(total ? loaded / total : null);
@@ -177,7 +219,8 @@ export async function loadModel(plan, fileSet, { renderer, onStage, onProgress }
   const manager = createManager(fileSet, {
     onProgress,
     onMissing: (url) => {
-      if (!url.startsWith('blob:') && !plan.format.quietMissing) missing.add(basename(url));
+      const ours = [...fileSet.urls.values()].includes(url);
+      if (!ours && !url.startsWith('data:') && !plan.format.quietMissing) missing.add(basename(url));
     },
   });
 
@@ -193,10 +236,29 @@ export async function loadModel(plan, fileSet, { renderer, onStage, onProgress }
     warn: (message) => warnings.push(message),
   });
   if (!object?.isObject3D) throw new LoadError('The file loaded but contained no 3D data.');
+  finalize(object);
 
   // Let async texture requests (e.g. OBJ+MTL) settle so we can report missing ones.
   await waitForManager(manager);
   return { object, missing: [...missing], warnings };
+}
+
+/**
+ * Format-independent tidy-up after loading:
+ * - give point clouds a point size relative to the model (loaders use
+ *   fixed sizes like 0.005 that are invisible on a mm-scale scan)
+ */
+function finalize(object) {
+  const points = [];
+  object.traverse((o) => o.isPoints && points.push(o));
+  if (points.length) {
+    const size = new THREE.Box3().setFromObject(object).getSize(new THREE.Vector3()).length();
+    for (const p of points) {
+      p.material.size = size / 500;
+      p.material.sizeAttenuation = true;
+      p.userData.basePointSize = p.material.size;
+    }
+  }
 }
 
 /** Resolve once the manager has no requests in flight (or after `timeout` ms). */

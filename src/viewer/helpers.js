@@ -132,7 +132,7 @@ export function createStats(parent) {
   return stats;
 }
 
-/** Axis-aligned bounding box helper that we can refit to any object. */
+/** Axis-aligned bounding box helper; the viewer copies the model box into `.box`. */
 export class BoundsHelper extends THREE.Box3Helper {
   constructor(color = 0xf5b942) {
     super(new THREE.Box3(), color);
@@ -143,9 +143,4 @@ export class BoundsHelper extends THREE.Box3Helper {
     this.renderOrder = 999;
   }
 
-  /** `precise` walks every vertex; slower but exact for rotated meshes. */
-  fitTo(object, precise = true) {
-    this.box.setFromObject(object, precise);
-    return this.box;
-  }
 }

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { InfiniteGrid, BoundsHelper, createAxesGizmo, createStats } from './helpers.js';
+import { computeVisibleBounds } from './bounds.js';
 import { disposeObject } from '../utils/dispose.js';
 
 const DEFAULT_VIEW_DIR = new THREE.Vector3(1, 0.75, 1.2).normalize();
@@ -172,7 +173,7 @@ export class Viewer extends EventTarget {
     this.pivot.updateMatrixWorld(true);
     if (!this.model) return;
 
-    const box = new THREE.Box3().setFromObject(this.upGroup, true);
+    const box = computeVisibleBounds(this.upGroup);
     if (box.isEmpty()) return;
 
     const center = box.getCenter(new THREE.Vector3());
@@ -183,9 +184,9 @@ export class Viewer extends EventTarget {
 
   /** Recompute the world-space bounding box (e.g. after an animation pose change). */
   updateBounds() {
-    this.modelBox.setFromObject(this.pivot, true);
+    computeVisibleBounds(this.pivot, this.modelBox);
     this.modelBox.getSize(this.modelSize);
-    this.bounds.fitTo(this.pivot);
+    this.bounds.box.copy(this.modelBox);
     this.bounds.visible = this.showBounds && !this.modelBox.isEmpty();
     const maxDim = Math.max(this.modelSize.x, this.modelSize.y, this.modelSize.z);
     if (maxDim > 0) this.grid.fitTo(maxDim);

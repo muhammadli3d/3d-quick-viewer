@@ -1,6 +1,6 @@
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
-import { extensionOf } from './registry.js';
+import { extensionOf, loadWith } from './registry.js';
 import { neutralMaterial, stripExtension } from './printing.js';
 
 /**
@@ -38,5 +38,42 @@ export async function loadOBJ(files, manager, ctx) {
   } else if (mtlNames.length && !files.get(mtlNames[0])) {
     ctx.warn?.(`OBJ asks for "${mtlNames[0]}" but "${mtlFile.name}" was used instead.`);
   }
+  return group;
+}
+
+/** FBX (binary or ASCII). Animations end up in group.animations. */
+export async function loadFBX(files, manager, ctx) {
+  const { FBXLoader } = await import('three/addons/loaders/FBXLoader.js');
+  const group = await loadWith(new FBXLoader(manager), files.url, ctx.onProgress);
+  group.name ||= stripExtension(files.main.name);
+  return group;
+}
+
+/** COLLADA .dae. The loader already converts Z_UP files and applies <unit>. */
+export async function loadDAE(files, manager, ctx) {
+  const { ColladaLoader } = await import('three/addons/loaders/ColladaLoader.js');
+  const collada = await loadWith(new ColladaLoader(manager), files.url, ctx.onProgress);
+  const scene = collada.scene;
+  scene.name ||= stripExtension(files.main.name);
+  scene.animations ??= []; // (collada.animations is deprecated; the loader fills scene.animations)
+  return scene;
+}
+
+/** Autodesk .3ds (the old 3D Studio format, still common on model sites). */
+export async function load3DS(files, manager, ctx) {
+  const { TDSLoader } = await import('three/addons/loaders/TDSLoader.js');
+  const group = await loadWith(new TDSLoader(manager), files.url, ctx.onProgress);
+  group.name ||= stripExtension(files.main.name);
+  return group;
+}
+
+/**
+ * USDZ / USDA / USDC. USDZLoader is deprecated since r179 and just extends
+ * USDLoader, which handles all three flavours, so we use that directly.
+ */
+export async function loadUSD(files, manager, ctx) {
+  const { USDLoader } = await import('three/addons/loaders/USDLoader.js');
+  const group = await loadWith(new USDLoader(manager), files.url, ctx.onProgress);
+  group.name ||= stripExtension(files.main.name);
   return group;
 }

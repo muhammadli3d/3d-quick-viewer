@@ -2,7 +2,7 @@ import './style.css';
 import { Viewer } from './viewer/Viewer.js';
 import { createSettingsPanel } from './ui/panel.js';
 import { initDropzone } from './ui/dropzone.js';
-import { loading, toast } from './ui/overlay.js';
+import { loading, toast, clearToasts } from './ui/overlay.js';
 import { resolveFiles, createFileSet, loadModel, LoadError } from './loaders/registry.js';
 import { formatBytes } from './utils/units.js';
 
@@ -62,6 +62,7 @@ async function openFiles(files) {
   }
 
   busy = true;
+  clearToasts(); // messages about the previous file no longer apply
   const fileSet = createFileSet(files, plan.main);
   loading.show(plan.main.name);
   await nextPaint();
