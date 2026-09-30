@@ -12,6 +12,10 @@ The owner is a technical artist who is learning from this code, so readability c
 | `npm run dev` | Dev server at http://localhost:5173 |
 | `npm run build` | Production build into `dist/` (must pass before every commit) |
 | `npm run preview` | Serve the built `dist/` at http://localhost:4173 |
+| `npm run samples` | Regenerate `samples/` with three.js exporters (`scripts/make-samples.mjs`) |
+
+Verification: load every file in `samples/` (drop them in, or drive `#file-input` with
+Playwright against `npm run preview`). Each must load with no error toast.
 
 ## Stack
 
@@ -55,6 +59,9 @@ src/
   utils/units.js      unit conversion (via mm) and number/byte formatting
   utils/dispose.js    frees geometry/material/texture GPU memory
 public/               static assets copied as-is
+samples/              small generated test models (committed)
+scripts/make-samples.mjs  sample generator (Node; polyfills FileReader for GLTFExporter)
+docs/screenshot.png   README screenshot
 ```
 
 ## Adding a format
