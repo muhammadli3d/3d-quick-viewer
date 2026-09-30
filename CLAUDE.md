@@ -29,11 +29,10 @@ Playwright against `npm run preview`). Each must load with no error toast.
 
 ```
 index.html            page shell: toolbar, side panel, overlays
-vite.config.js        plugins below + reads LDRAW_LIBRARY_PATH from .env
+vite.config.js        plugins below + reads optional LDRAW_LIBRARY_PATH from a local, git-ignored .env
 vite-plugins/
   vendor-assets.js    serves/copies rhino3dm.js+.wasm to /vendor/rhino3dm/
   ldraw-library.js    serves the local LDraw library at /ldraw/ (dev + preview)
-.env.example          LDRAW_LIBRARY_PATH template
 src/
   main.js             entry point: wires viewer + UI + keyboard shortcuts
   style.css           dark/light theme via CSS variables on <html data-theme>
