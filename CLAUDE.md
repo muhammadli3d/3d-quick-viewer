@@ -13,6 +13,8 @@ The owner is a technical artist who is learning from this code, so readability c
 | `npm run build` | Production build into `dist/` (must pass before every commit) |
 | `npm run preview` | Serve the built `dist/` at http://localhost:4173 |
 | `npm run samples` | Regenerate `samples/` with three.js exporters (`scripts/make-samples.mjs`) |
+| `npm run tauri:dev` | Desktop window (Tauri) around the dev server (needs Rust + MSVC on Windows) |
+| `npm run tauri:build` | Windows `.exe` + NSIS/MSI installers in `src-tauri/target/release/` |
 
 Verification: load every file in `samples/` (drop them in, or drive `#file-input` with
 Playwright against `npm run preview`). Each must load with no error toast.
@@ -24,6 +26,8 @@ Playwright against `npm run preview`). Each must load with no error toast.
 - **lil-gui** for the settings panel.
 - **occt-import-js** (OpenCASCADE → WASM) for STEP/IGES, run in a module Web Worker.
 - **rhino3dm** (WASM) for .3dm, fetched at runtime by `Rhino3dmLoader`.
+- **Tauri 2** wraps `dist/` as a Windows desktop app (WebView2). CI builds it:
+  `.github/workflows/windows-build.yml` (windows-latest → artifact `local-3d-viewer-windows`).
 
 ## Folder structure
 
@@ -57,6 +61,8 @@ src/
   ui/outliner.js      lazy, collapsible scene tree; click = highlight, double-click = frame
   utils/units.js      unit conversion (via mm) and number/byte formatting
   utils/dispose.js    frees geometry/material/texture GPU memory
+src-tauri/            Tauri shell: tauri.conf.json, Cargo.toml (+ Cargo.lock), src/*.rs, icons/
+.github/workflows/windows-build.yml  builds the .exe/installers on GitHub Actions
 public/               static assets copied as-is
 samples/              small generated test models (committed)
 scripts/make-samples.mjs  sample generator (Node; polyfills FileReader for GLTFExporter)
@@ -86,6 +92,13 @@ docs/screenshot.png   README screenshot
   so the URL modifier must look up blob: URLs by basename too.
 - `occt-import-js` build prints "Module path/crypto externalized" warnings: harmless
   (Emscripten's Node-only code paths).
+
+- Tauri: `dragDropEnabled: false` in `tauri.conf.json` is required. Otherwise Tauri's native
+  file-drop handler swallows OS drops and our HTML5 drop zone never sees them.
+- Tauri: `csp: null` because loaders create Workers from blob: URLs and compile WASM;
+  the app loads no remote content. Tighten it if remote loading is ever added.
+- Tauri: the `/ldraw/` and dev-only middleware don't exist in the packaged app (it serves
+  `dist/` only), so anything a Vite plugin serves at runtime must also be emitted into `dist/`.
 
 ## Conventions
 

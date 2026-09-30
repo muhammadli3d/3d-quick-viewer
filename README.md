@@ -76,6 +76,36 @@ Other scripts:
 The `samples/` folder has small test files for STL (binary + ASCII), OBJ + MTL, an animated GLB,
 a vertex-coloured PLY, an XYZ point cloud, LDraw `.ldr` / packed `.mpd` and a G-code vase.
 
+## Windows desktop app (.exe)
+
+The app can be packaged as a native Windows program with [Tauri](https://tauri.app). It uses the
+WebView2 runtime built into Windows 10/11, so the app is only a few MB.
+
+**Easiest: let GitHub build it.** Every push to `main` or a pull request runs the
+[Windows build](.github/workflows/windows-build.yml) workflow. Open the repo's **Actions** tab,
+pick the latest *Windows build* run and download the **local-3d-viewer-windows** artifact. It
+contains:
+- `local-3d-viewer.exe`: the portable app, which runs without installing
+- `Local 3D Viewer_x.y.z_x64-setup.exe`: an installer with a Start-menu shortcut and uninstaller
+- `Local 3D Viewer_x.y.z_x64_en-US.msi`: an MSI installer
+
+You can also start it by hand with **Run workflow**.
+
+**Build locally** (on Windows) after installing
+[Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+("Desktop development with C++") and [Rust](https://rustup.rs):
+
+```powershell
+npm run tauri:dev     # desktop window with hot reload
+npm run tauri:build   # → src-tauri\target\release\ (+ bundle\nsis, bundle\msi)
+```
+
+Notes:
+- The build is unsigned, so Windows SmartScreen may say "Windows protected your PC".
+  Click **More info → Run anyway**.
+- The LDraw parts library isn't available in the desktop app yet, because `/ldraw/` is served by
+  the Vite dev server. Packed `.mpd` files and the built-in colours still work.
+
 ## LDraw setup
 
 `.ldr` / `.mpd` files normally reference parts from the **LDraw parts library**, which is
@@ -130,6 +160,7 @@ src/loaders/           registry.js (extension → loader, file resolution) + one
 src/ui/                drop zone, overlays/toasts, lil-gui panel, info panel, outliner
 src/utils/             unit conversion, GPU resource disposal
 vite-plugins/          serve the LDraw library and rhino3dm WASM
+src-tauri/             Tauri desktop shell (Rust) + app config and icons
 scripts/make-samples.mjs
 ```
 
@@ -137,7 +168,8 @@ See [CLAUDE.md](CLAUDE.md) for conventions and how to add a format.
 
 ## Roadmap
 
-- [ ] Package as a desktop app with **Tauri**, with Windows file associations so double-clicking
+- [x] Package as a Windows desktop app with **Tauri** (built by GitHub Actions)
+- [ ] Windows file associations so double-clicking
       `.stl` / `.glb` / `.3mf` opens the viewer
 - [ ] Open a file from command-line args; recent-files list
 - [ ] Measure tool (click two points → distance) and a section/clipping plane
