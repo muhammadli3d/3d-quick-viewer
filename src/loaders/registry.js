@@ -254,7 +254,7 @@ function finalize(object) {
   if (points.length) {
     const size = new THREE.Box3().setFromObject(object).getSize(new THREE.Vector3()).length();
     for (const p of points) {
-      p.material.size = size / 500;
+      p.material.size = size / 250;
       p.material.sizeAttenuation = true;
       p.userData.basePointSize = p.material.size;
     }
