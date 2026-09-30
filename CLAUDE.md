@@ -36,6 +36,8 @@ src/
   viewer/Viewer.js    renderer, scene, cameras, OrbitControls, lights, framing, animation
   viewer/helpers.js   infinite grid (shader), axes gizmo (ViewHelper), bounds box, stats
   viewer/bounds.js    bounding box of *visible* geometry (exact, per-vertex)
+  viewer/viewModes.js shaded / wireframe / shaded+wire / normals / clay, double-sided
+  viewer/inspect.js   mesh/triangle/vertex/material counts
   loaders/registry.js extension → { label, upAxis, units, load } + file resolution,
                       blob-URL map, LoadingManager URL modifier, loadModel()
   loaders/printing.js STL, 3MF, AMF, G-code
@@ -47,7 +49,10 @@ src/
   loaders/ldraw.js    LDraw .ldr/.mpd/.dat (+ ldraw-colors.js fallback palette)
   ui/dropzone.js      drag-and-drop (incl. folders) + file input
   ui/overlay.js       loading overlay + toasts
-  ui/panel.js         lil-gui settings panel
+  ui/panel.js         lil-gui settings panel (+ per-model Animation / G-code / Point cloud folders)
+  ui/info.js          info + dimensions panel
+  ui/outliner.js      lazy, collapsible scene tree; click = highlight, double-click = frame
+  utils/units.js      unit conversion (via mm) and number/byte formatting
   utils/dispose.js    frees geometry/material/texture GPU memory
 public/               static assets copied as-is
 ```
@@ -86,6 +91,9 @@ public/               static assets copied as-is
   the outliner and stats can skip them.
 - Scene layout: `scene > __pivot (centring offset) > __up (Z-up → Y-up rotation) > model`.
   The loaded model itself is never modified by the viewer.
+- View-mode overrides are shared materials; the file's material is kept in
+  `mesh.userData.originalMaterial`. Always `restoreMaterials()` before disposing a model.
+- Dimensions are shown in the file's convention: for Z-up files, viewer Y is reported as Z.
 - The renderer uses `autoClear = false` and clears manually in `Viewer.render()`,
   because the axes gizmo is a second `render()` call into a corner viewport.
 - Commit messages: Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`…).

@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { InfiniteGrid, BoundsHelper, createAxesGizmo, createStats } from './helpers.js';
 import { computeVisibleBounds } from './bounds.js';
+import { applyViewMode, restoreMaterials, setDoubleSided, setViewModeTheme } from './viewModes.js';
 import { disposeObject } from '../utils/dispose.js';
 
 const DEFAULT_VIEW_DIR = new THREE.Vector3(1, 0.75, 1.2).normalize();
@@ -74,6 +75,16 @@ export class Viewer extends EventTarget {
     scene.add(this.bounds);
     this.showBounds = false;
 
+    // Outliner selection highlight.
+    this.selectionBox = new BoundsHelper(0x4da3ff);
+    this.selectionBox.name = '__selection';
+    this.selectionBox.visible = false;
+    scene.add(this.selectionBox);
+    this.selected = null;
+
+    this.viewMode = 'shaded';
+    this.doubleSided = false;
+
     this.gizmo = createAxesGizmo(this.camera, renderer.domElement);
     this.showAxes = true;
     renderer.domElement.addEventListener('pointerup', (e) => {
@@ -133,6 +144,9 @@ export class Viewer extends EventTarget {
       this.playClip(0);
     }
 
+    if (this.doubleSided) setDoubleSided(object, true);
+    if (this.viewMode !== 'shaded') applyViewMode(object, this.viewMode, { doubleSided: this.doubleSided });
+
     this.setUpAxis(upAxis, { frame: false });
     this.frame({ resetDirection: true });
     this.dispatchEvent(new CustomEvent('model', { detail: { model: object } }));
@@ -147,7 +161,9 @@ export class Viewer extends EventTarget {
     this.clips = [];
     this.activeAction = null;
 
+    this.select(null);
     if (this.model) {
+      restoreMaterials(this.model); // shared override materials must not be disposed
       this.upGroup.remove(this.model);
       disposeObject(this.model);
       this.model = null;
@@ -180,6 +196,7 @@ export class Viewer extends EventTarget {
     this.pivot.position.set(-center.x, -box.min.y, -center.z);
     this.pivot.updateMatrixWorld(true);
     this.updateBounds();
+    if (this.selected) this.select(this.selected); // box moved with the model
   }
 
   /** Recompute the world-space bounding box (e.g. after an animation pose change). */
@@ -191,6 +208,41 @@ export class Viewer extends EventTarget {
     const maxDim = Math.max(this.modelSize.x, this.modelSize.y, this.modelSize.z);
     if (maxDim > 0) this.grid.fitTo(maxDim);
     return this.modelBox;
+  }
+
+  // =====================================================================
+  // Inspection: view modes, double-sided, selection
+  // =====================================================================
+
+  /** 'shaded' | 'wireframe' | 'shaded+wire' | 'normals' | 'clay' */
+  setViewMode(mode) {
+    this.viewMode = mode;
+    if (this.model) applyViewMode(this.model, mode, { doubleSided: this.doubleSided });
+  }
+
+  setDoubleSided(enabled) {
+    this.doubleSided = enabled;
+    if (this.model) setDoubleSided(this.model, enabled);
+  }
+
+  /** Highlight one node of the model (or null to clear) with a box. */
+  select(object) {
+    this.selected = object;
+    if (!object) {
+      this.selectionBox.visible = false;
+      return;
+    }
+    computeVisibleBounds(object, this.selectionBox.box);
+    this.selectionBox.visible = !this.selectionBox.box.isEmpty();
+  }
+
+  /** Frame the camera on the selected node (or the whole model). */
+  frameSelection() {
+    if (this.selected && !this.selectionBox.box.isEmpty()) {
+      this.frame({ box: this.selectionBox.box.clone() });
+    } else {
+      this.frame();
+    }
   }
 
   // =====================================================================
@@ -344,6 +396,41 @@ export class Viewer extends EventTarget {
 
   setTheme(dark) {
     this.grid.setTheme(dark);
+    setViewModeTheme(dark);
+  }
+
+  /** Scale all point-cloud points relative to their auto-computed size. */
+  setPointScale(scale) {
+    this.model?.traverse((o) => {
+      if (o.isPoints && o.userData.basePointSize) o.material.size = o.userData.basePointSize * scale;
+    });
+  }
+
+  // =====================================================================
+  // Screenshot
+  // =====================================================================
+
+  /**
+   * Render the current view to a PNG blob. The axes gizmo and selection box
+   * are left out; with `transparent` the background and grid are too.
+   */
+  async capture({ transparent = false } = {}) {
+    const saved = { grid: this.grid.visible, axes: this.showAxes, selection: this.selectionBox.visible };
+    this.showAxes = false;
+    this.selectionBox.visible = false;
+    if (transparent) this.grid.visible = false;
+
+    this.renderer.setClearColor(this.backgroundColor, transparent ? 0 : 1);
+    this.renderer.clear();
+    this.renderer.render(this.scene, this.camera);
+    // toBlob() snapshots the canvas now, before the next frame is drawn
+    // (so we don't need preserveDrawingBuffer: true, which costs performance).
+    const blob = await new Promise((resolve) => this.renderer.domElement.toBlob(resolve, 'image/png'));
+
+    this.grid.visible = saved.grid;
+    this.showAxes = saved.axes;
+    this.selectionBox.visible = saved.selection;
+    return blob;
   }
 
   _updateLight() {

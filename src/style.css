@@ -382,6 +382,13 @@ button:hover {
   --string-color: #2f7d32;
 }
 
+/* H key: hide panels for a clean view */
+body.ui-hidden #side-panel,
+body.ui-hidden .lil-gui.root,
+body.ui-hidden #toolbar > :not(.brand) {
+  display: none;
+}
+
 /* Small screens: stack things a bit tighter */
 @media (max-width: 720px) {
   #toolbar { right: 10px; flex-wrap: wrap; }
